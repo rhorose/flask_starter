@@ -5,8 +5,9 @@ Werkzeug Documentation:  https://werkzeug.palletsprojects.com/
 This file creates your application.
 """
 
-from app import app
+from app import app, forms
 from flask import render_template, request, redirect, url_for
+
 
 
 ###
@@ -23,6 +24,46 @@ def home():
 def about():
     """Render the website's about page."""
     return render_template('about.html', name="Mary Jane")
+
+@app.route('/property',methods=['POST', 'GET'])
+def property():
+    """For displaying the form to add a new property."""
+    form=PropertyForm()
+    if request.method == 'POST' and form.validate_on_submit():
+        prop_title= form.title.data
+        description= form.description.data
+        rooms=form.rooms.data
+        bathrooms= form.bathrooms.data
+        location= form.location.data
+        price= form.price.data
+        type= form.type.data
+        
+
+        photo= form.photo.data
+        filename= secure_filename(photo.filename)
+        photo.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+
+        property= PropertyMod(prop_title,description,rooms,bathrooms,location,price,type,filename)
+        db.session.add(property)
+        db.session.commit()
+        flash('Property added','success')
+        return redirect(url_for('properties'))
+        
+    return render_template('property.html', form=form)
+
+
+@app.route('/properties')
+def properties():
+    """For showing properties in the database."""
+    properties=PropertyMod.query.all()
+    return render_template('properties.html',properties=properties)
+
+@app.route('/property/<propertyid>')
+def propertyid(propertyid):
+    
+    propertyid=PropertyMod.query.get(propertyid)
+    return render_template('propertyid.html', propertyid=propertyid)
+
 
 
 ###
